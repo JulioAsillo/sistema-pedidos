@@ -1,0 +1,124 @@
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: kafka
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+
+      # --- Listeners: en qué puertos escucha el broker ---
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # --- Replicación: 1 porque es un solo broker ---
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+      # --- Creación automática de topics (cómodo en dev) ---
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - sistema-pedidos-net
+
+  # ═══════════════════════════════════════════════════════════
+  # KAFKA UI — interfaz web para inspeccionar topics y mensajes
+  # ═══════════════════════════════════════════════════════════
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - sistema-pedidos-net
+
+  # ═══════════════════════════════════════════════════════════
+  # POSTGRES — uno por servicio (patrón database per service)
+  # ═══════════════════════════════════════════════════════════
+  postgres-pedidos:
+    image: postgres:16-alpine
+    container_name: postgres-pedidos
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: pedidos_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_pedidos_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pedidos_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sistema-pedidos-net
+
+  postgres-catalogo:
+    image: postgres:16-alpine
+    container_name: postgres-catalogo
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: catalogo_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_catalogo_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d catalogo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sistema-pedidos-net
+
+  postgres-pagos:
+    image: postgres:16-alpine
+    container_name: postgres-pagos
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: pagos_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_pagos_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pagos_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sistema-pedidos-net
+
+volumes:
+  kafka_data:
+  postgres_pedidos_data:
+  postgres_catalogo_data:
+  postgres_pagos_data:
+
+networks:
+  sistema-pedidos-net:
+    driver: bridge
