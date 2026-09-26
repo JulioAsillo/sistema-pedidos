@@ -57,7 +57,7 @@ class CrearPedidoHandlerTest {
     void guardaPedidoYDevuelveId(){
         CrearPedidoCommand cmd = comandoValido();
         Pedido persistido = pedidoPersistido(cmd);
-        when(pedidoRepository.save(persistido)).thenReturn(persistido);
+        when(pedidoRepository.save(any(Pedido.class))).thenReturn(persistido);
 
         UUID resultado = handler.handle(cmd);
 
@@ -79,7 +79,7 @@ class CrearPedidoHandlerTest {
         handler.handle(cmd);
 
         ArgumentCaptor<PedidoResumen> captor = ArgumentCaptor.forClass(PedidoResumen.class);
-        verify(pedidoResumenRepository).save(any(PedidoResumen.class));
+        verify(pedidoResumenRepository).save(captor.capture());
 
         PedidoResumen resumen = captor.getValue();
         assertThat(resumen.getPedidoId()).isEqualTo(persistido.getId());
@@ -100,7 +100,7 @@ class CrearPedidoHandlerTest {
         verify(eventPublisher).publicarPedidoCreado(captor.capture());
 
         PedidoCreadoEvent evento = captor.getValue();
-        assertThat(evento.pedidoId()).isEqualTo(persistido.getCantidad());
+        assertThat(evento.pedidoId()).isEqualTo(persistido.getId());
         assertThat(evento.productoId()).isEqualTo(cmd.productoId());
         assertThat(evento.cantidad()).isEqualTo(2);
     }

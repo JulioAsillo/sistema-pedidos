@@ -1,12 +1,16 @@
 package com.zv.pedidos_service.command;
 
 import com.zv.pedidos_service.domain.Pedido;
+import com.zv.pedidos_service.domain.PedidoResumen;
 import com.zv.pedidos_service.domain.repository.PedidoRepository;
+import com.zv.pedidos_service.domain.repository.PedidoResumenRepository;
 import com.zv.pedidos_service.events.PedidoCreadoEvent;
 import com.zv.pedidos_service.saga.PedidoEventPublisher;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -14,8 +18,10 @@ import java.util.UUID;
 public class CrearPedidoHandler {
 
     private final PedidoRepository pedidoRepository;
+    private final PedidoResumenRepository pedidoResumenRepository;
     private final PedidoEventPublisher eventPublisher;
 
+    @Transactional
     public UUID handle(CrearPedidoCommand command){
         Pedido pedido = new Pedido();
         pedido.setClienteId(command.clienteId());
@@ -24,16 +30,24 @@ public class CrearPedidoHandler {
         pedido.setMontoTotal(command.montoTotal());
 
         Pedido guardado = pedidoRepository.save(pedido);
-        PedidoCreadoEvent evento = new PedidoCreadoEvent(
+
+        PedidoResumen resumen = new PedidoResumen(
                 guardado.getId(),
                 guardado.getClienteId(),
-                guardado.getProductoId(),
-                guardado.getCantidad(),
+                guardado.getEstado().name(),
                 guardado.getMontoTotal(),
-                guardado.getFechaCreacion()
+                guardado.getCantidad(),
+                guardado.getFechaCreacion(),
+                LocalDateTime.now()
         );
+        pedidoResumenRepository.save(resumen);
+
+        PedidoCreadoEvent evento = new PedidoCreadoEvent(
+          guardado.getId(), guardado.getClienteId(), guardado.getProductoId(),
+          guardado.getCantidad(), guardado.getMontoTotal(), guardado.getFechaCreacion());
         eventPublisher.publicarPedidoCreado(evento);
 
         return guardado.getId();
     }
+
 }
