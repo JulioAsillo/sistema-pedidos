@@ -2,6 +2,7 @@ package com.zv.catalogo_service.service;
 
 import com.zv.catalogo_service.domain.Producto;
 import com.zv.catalogo_service.domain.repository.ProductoRepository;
+import com.zv.catalogo_service.domain.repository.ReservaRepository;
 import com.zv.catalogo_service.events.PedidoCreadoEvent;
 import com.zv.catalogo_service.events.StockRechazadoEvent;
 import com.zv.catalogo_service.events.StockReservadoEvent;
@@ -26,6 +27,9 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ReservaStockServiceTest {
+
+    @Mock
+    private ReservaRepository reservaRepository;
 
     @Mock
     private ProductoRepository productoRepository;
