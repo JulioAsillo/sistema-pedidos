@@ -18,4 +18,9 @@ public class KafkaTopicsConfig {
         return TopicBuilder.name(topics.pedidoCancelado()).partitions(3).replicas(1).build();
     }
 
+    @Bean
+    public NewTopic pedidoConfirmadoTopic(KafkaTopicsProperties topics){
+        return TopicBuilder.name(topics.pedidoConfirmado()).partitions(3).replicas(1).build();
+    }
+
 }
