@@ -1,6 +1,8 @@
 package com.zv.pedidos_service.saga;
 
 import com.zv.pedidos_service.config.KafkaTopicsProperties;
+import com.zv.pedidos_service.events.PedidoCanceladoEvent;
+import com.zv.pedidos_service.events.PedidoConfirmadoEvent;
 import com.zv.pedidos_service.events.PedidoCreadoEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,16 +20,24 @@ public class KafkaPedidoEventPublisher implements PedidoEventPublisher{
 
     @Override
     public void publicarPedidoCreado(PedidoCreadoEvent evento) {
-        kafkaTemplate.send(topics.pedidoCreado(), evento.pedidoId().toString(), evento)
-                .whenComplete((result, ex) -> {
-                    if (ex != null){
-                        log.error("Error publicando PedidoCreado {}", evento.pedidoId(), ex);
-                    } else{
-                        log.debug("PedidoCreado {} -> partición {} offset {}",
-                                evento.pedidoId(),
-                                result.getRecordMetadata().partition(),
-                                result.getRecordMetadata().offset());
-                    }
-                });
+        enviar(topics.pedidoCreado(), evento.pedidoId().toString(), evento);
+    }
+
+    @Override
+    public void publicarPedidoConfirmado(PedidoConfirmadoEvent evento) {
+        enviar(topics.pedidoConfirmado(), evento.pedidoId().toString(), evento);
+    }
+
+    @Override
+    public void publicarPedidoCancelado(PedidoCanceladoEvent evento) {
+        enviar(topics.pedidoCancelado(), evento.pedidoId().toString(), evento);
+    }
+
+    private void enviar(String topic, String key, Object evento){
+        kafkaTemplate.send(topic, key, evento).whenComplete((r, ex) -> {
+            if (ex != null) log.error("Error publicando en {} (key={})", topic, key, ex);
+            else log.debug("Publicado en {} key={} partición {} offset {}", topic, key,
+                    r.getRecordMetadata().partition(), r.getRecordMetadata().offset());
+        });
     }
 }

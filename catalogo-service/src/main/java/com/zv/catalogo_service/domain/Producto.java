@@ -43,4 +43,8 @@ public class Producto {
         this.stock -= cantidad;
     }
 
+    public void reponerStock(int cantidad){
+        this.stock += cantidad;
+    }
+
 }

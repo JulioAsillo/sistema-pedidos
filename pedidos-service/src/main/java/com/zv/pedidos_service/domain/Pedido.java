@@ -54,4 +54,17 @@ public class Pedido {
     protected void alActualizar(){
         this.fechaActualizacion = LocalDateTime.now();
     }
+
+    public boolean esFinal(){
+        return estado == EstadoPedido.CONFIRMADO || estado == EstadoPedido.CANCELADO;
+    }
+
+    public boolean transicionarA(EstadoPedido nuevo){
+        if (esFinal() || estado == nuevo){
+            return false;
+        }
+        this.estado = nuevo;
+        return true;
+    }
+
 }
