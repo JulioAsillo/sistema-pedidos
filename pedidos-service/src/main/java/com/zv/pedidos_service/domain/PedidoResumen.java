@@ -1,6 +1,7 @@
 package com.zv.pedidos_service.domain;
 
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -28,6 +29,7 @@ public class PedidoResumen {
 
     private String nombreEstado;
 
+    @Column(precision = 12, scale = 2)
     private BigDecimal montoTotal;
 
     private Integer cantidadProductos;

@@ -32,7 +32,7 @@ public class Pedido {
     @Column(nullable = false)
     private Integer cantidad;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal montoTotal;
 
     @Enumerated(EnumType.STRING)
